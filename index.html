@@ -221,9 +221,9 @@
     border-bottom: 1px solid var(--border); align-items: flex-start;
   }
   .ex-row:last-child { border-bottom: none; }
-  .ex-key { font-size: 12px; color: var(--text-muted); min-width: 150px; padding-top: 2px; }
+  .ex-key { font-size: 12px; color: var(--text-muted); min-width: 150px; padding-top: 3px; }
   .ex-val { font-size: 13px; color: var(--text); flex: 1; }
-  .ex-val input { width: 100%; background: transparent; border: none; font-family: inherit; font-size: 13px; color: var(--text); outline: none; }
+  .ex-val textarea { width: 100%; background: transparent; border: none; font-family: inherit; font-size: 13px; color: var(--text); outline: none; padding: 0; resize: none; overflow: hidden; line-height: 1.5; min-height: 20px; }
 
   .log-box {
     background: var(--bg); border: 1px solid var(--border);
@@ -350,17 +350,17 @@
     <div class="card" id="extract-card">
       <div class="card-title">Client profile — review and correct</div>
       <div class="extracted-fields">
-        <div class="ex-row"><span class="ex-key">Company name</span><div class="ex-val"><input id="e-company" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Industry</span><div class="ex-val"><input id="e-industry" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Company size</span><div class="ex-val"><input id="e-size" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Key contacts</span><div class="ex-val"><input id="e-contacts" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Region / location</span><div class="ex-val"><input id="e-region" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Current tools</span><div class="ex-val"><input id="e-tools" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Pain points</span><div class="ex-val"><input id="e-pain" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Desired outcomes</span><div class="ex-val"><input id="e-outcomes" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Features resonated</span><div class="ex-val"><input id="e-features" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Timeline / urgency</span><div class="ex-val"><input id="e-timeline" type="text" placeholder="—"/></div></div>
-        <div class="ex-row"><span class="ex-key">Budget signals</span><div class="ex-val"><input id="e-budget" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Company name</span><div class="ex-val"><textarea id="e-company" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Industry</span><div class="ex-val"><textarea id="e-industry" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Company size</span><div class="ex-val"><textarea id="e-size" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Key contacts</span><div class="ex-val"><textarea id="e-contacts" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Region / location</span><div class="ex-val"><textarea id="e-region" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Current tools</span><div class="ex-val"><textarea id="e-tools" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Pain points</span><div class="ex-val"><textarea id="e-pain" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Desired outcomes</span><div class="ex-val"><textarea id="e-outcomes" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Features resonated</span><div class="ex-val"><textarea id="e-features" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Timeline / urgency</span><div class="ex-val"><textarea id="e-timeline" rows="1" placeholder="—"></textarea></div></div>
+        <div class="ex-row"><span class="ex-key">Budget signals</span><div class="ex-val"><textarea id="e-budget" rows="1" placeholder="—"></textarea></div></div>
       </div>
     </div>
 
@@ -447,8 +447,18 @@ var currentMethod = 'paste';
 var fileContent = '';
 var extractedData = {};
 
+function autoHeight(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
 // Init industry assets on load
-window.addEventListener('load', function(){ renderIndustryAssets('Agency / Creative'); });
+window.addEventListener('load', function(){
+  renderIndustryAssets('Agency / Creative');
+  document.querySelectorAll('.ex-val textarea').forEach(function(ta){
+    ta.addEventListener('input', function(){ autoHeight(ta); });
+  });
+});
 
 function getWorkerUrl() {
   return localStorage.getItem('workerUrl') || '';
@@ -655,7 +665,7 @@ async function runExtract() {
     var fields = ['company','industry','size','contacts','region','tools','pain','outcomes','features','timeline','budget'];
     fields.forEach(function(f){
       var el = document.getElementById('e-'+f);
-      if (el && data[f]) el.value = data[f];
+      if (el && data[f]) { el.value = data[f]; autoHeight(el); }
     });
     hideStatus('extract-status');
   } catch(err) {
