@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Demo Builder — Transcript to Smartsheet</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --surface2: #F0EFE9;
+    --border: #E2E0D8;
+    --border-strong: #C8C5BA;
+    --text: #1A1916;
+    --text-muted: #6B6860;
+    --text-faint: #A09D96;
+    --accent: #2563EB;
+    --accent-light: #EFF4FF;
+    --accent-border: #BFCFEE;
+    --green: #166534;
+    --green-bg: #F0FDF4;
+    --green-border: #BBF7D0;
+    --red: #991B1B;
+    --red-bg: #FEF2F2;
+    --red-border: #FECACA;
+    --amber: #92400E;
+    --amber-bg: #FFFBEB;
+    --amber-border: #FDE68A;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 780px; margin: 0 auto; }
+
+  header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--text);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 1.5; }
+  h1 { font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
+  .tagline { font-size: 13px; color: var(--text-muted); margin-top: 1px; }
+  .config-btn {
+    font-size: 12px; padding: 6px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .config-btn:hover { background: var(--surface2); }
+
+  .steps {
+    display: flex; gap: 0;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .step-tab {
+    flex: 1; padding: 12px 10px;
+    text-align: center; font-size: 13px;
+    color: var(--text-muted); cursor: pointer;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .step-tab:last-child { border-right: none; }
+  .step-tab.active { background: var(--surface); color: var(--text); font-weight: 500; }
+  .step-tab.done { color: var(--green); }
+  .step-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 11px; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--border); color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .step-tab.active .step-num { background: var(--text); color: #fff; }
+  .step-tab.done .step-num { background: var(--green); color: #fff; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.07em; margin-bottom: 1rem;
+  }
+
+  .method-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+  .chip {
+    padding: 7px 14px; border: 1px solid var(--border-strong);
+    border-radius: 999px; font-size: 13px; cursor: pointer;
+    color: var(--text-muted); background: var(--surface);
+    font-family: inherit; transition: all 0.12s;
+  }
+  .chip:hover { border-color: var(--text); color: var(--text); }
+  .chip.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  .paste-area {
+    width: 100%; min-height: 180px; resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px; line-height: 1.7;
+    color: var(--text); background: var(--bg);
+    outline: none; transition: border-color 0.15s;
+  }
+  .paste-area:focus { border-color: var(--accent); }
+  .paste-area::placeholder { color: var(--text-faint); }
+
+  .hint { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+
+  .field-row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 580px) {
+    .field-row.cols-2, .field-row.cols-3 { grid-template-columns: 1fr; }
+  }
+
+  .field {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .field label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: transparent; border: none;
+    font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif;
+    outline: none; padding: 0; resize: none;
+  }
+  .field textarea { min-height: 56px; line-height: 1.5; }
+
+  .asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 1.25rem; }
+  .asset-card {
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; cursor: pointer; background: var(--surface);
+    transition: all 0.12s; position: relative;
+  }
+  .asset-card:hover { border-color: var(--border-strong); }
+  .asset-card.on { border-color: var(--accent); background: var(--accent-light); }
+  .asset-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; color: var(--text); }
+  .asset-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .asset-badge {
+    position: absolute; top: 8px; right: 8px;
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--text-muted);
+  }
+  .asset-card.on .asset-badge { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 1.5rem; align-items: center; }
+  .btn {
+    padding: 10px 20px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    font-family: inherit; transition: all 0.12s; border: none;
+  }
+  .btn-primary { background: var(--text); color: #fff; }
+  .btn-primary:hover { background: #333; }
+  .btn-primary:disabled { background: var(--border-strong); color: var(--text-faint); cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { background: var(--surface2); }
+
+  .status-bar {
+    display: none; padding: 10px 14px;
+    border-radius: var(--radius-sm); font-size: 13px;
+    margin-bottom: 1rem; align-items: center; gap: 8px;
+  }
+  .status-bar.show { display: flex; }
+  .status-bar.info { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); }
+  .status-bar.success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .status-bar.error { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .status-bar.warning { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .spinner {
+    width: 14px; height: 14px; border: 2px solid currentColor;
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .extracted-fields { margin-top: 0.5rem; }
+  .ex-row {
+    display: flex; gap: 12px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); align-items: flex-start;
+  }
+  .ex-row:last-child { border-bottom: none; }
+  .ex-key { font-size: 12px; color: var(--text-muted); min-width: 150px; padding-top: 2px; }
+  .ex-val { font-size: 13px; color: var(--text); flex: 1; }
+  .ex-val input { width: 100%; background: transparent; border: none; font-family: inherit; font-size: 13px; color: var(--text); outline: none; }
+
+  .log-box {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--text-muted); line-height: 1.7; margin-top: 1rem;
+    max-height: 220px; overflow-y: auto;
+    display: none;
+  }
+  .log-box.show { display: block; }
+  .log-line { margin-bottom: 2px; }
+  .log-line.ok { color: var(--green); }
+  .log-line.err { color: var(--red); }
+  .log-line.info { color: var(--accent); }
+
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 1rem; }
+  .result-card {
+    background: var(--green-bg); border: 1px solid var(--green-border);
+    border-radius: var(--radius-sm); padding: 12px;
+  }
+  .result-card a { color: var(--green); font-size: 13px; font-weight: 500; text-decoration: none; }
+  .result-card a:hover { text-decoration: underline; }
+  .result-type { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  .config-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 100;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .config-modal.show { display: flex; }
+  .config-inner {
+    background: var(--surface); border-radius: var(--radius);
+    padding: 1.5rem; width: 100%; max-width: 460px;
+    border: 1px solid var(--border);
+  }
+  .config-title { font-size: 15px; font-weight: 500; margin-bottom: 1.25rem; }
+  .config-close { float: right; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
+  .config-field { margin-bottom: 1rem; }
+  .config-field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; font-weight: 500; }
+  .config-field input {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text);
+    background: var(--bg); outline: none;
+  }
+  .config-field input:focus { border-color: var(--accent); }
+  .config-note { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+
+  .file-drop {
+    border: 2px dashed var(--border-strong); border-radius: var(--radius-sm);
+    padding: 2rem; text-align: center; cursor: pointer;
+    transition: all 0.15s; background: var(--bg);
+  }
+  .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .file-drop p { font-size: 13px; color: var(--text-muted); }
+  .file-drop .file-name { font-size: 13px; color: var(--green); font-weight: 500; margin-top: 6px; }
+  #file-input { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div>
+        <h1>Demo Builder</h1>
+        <div class="tagline">Transcript → Smartsheet assets</div>
+      </div>
+    </div>
+    <button class="config-btn" onclick="openConfig()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configure
+    </button>
+  </header>
+
+  <div class="steps">
+    <div class="step-tab active" id="tab-0" onclick="goStep(0)"><span class="step-num">1</span>Transcript</div>
+    <div class="step-tab" id="tab-1" onclick="goStep(1)"><span class="step-num">2</span>Extract</div>
+    <div class="step-tab" id="tab-2" onclick="goStep(2)"><span class="step-num">3</span>Build</div>
+  </div>
+
+  <!-- STEP 1: Transcript -->
+  <div class="panel active" id="panel-0">
+    <div class="card">
+      <div class="card-title">Input method</div>
+      <div class="method-chips">
+        <button class="chip active" onclick="setMethod('paste',this)">Paste text</button>
+        <button class="chip" onclick="setMethod('file',this)">Upload file</button>
+        <button class="chip" onclick="setMethod('notes',this)">Meeting notes</button>
+      </div>
+
+      <div id="input-paste">
+        <p class="hint">Paste raw transcript — Teams auto-captions, Otter, Rev, manual notes, any format.</p>
+        <textarea class="paste-area" id="transcript-paste" placeholder="[00:00] John: Thanks for joining today...&#10;[00:15] Sarah: Of course, excited to learn more...&#10;&#10;Any format works. Claude will parse it."></textarea>
+      </div>
+
+      <div id="input-file" style="display:none">
+        <p class="hint">Supported: .vtt (Teams), .txt, .docx text export, .srt</p>
+        <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()" ondragover="fileDragOver(event)" ondrop="fileDrop(event)" ondragleave="this.classList.remove('dragover')">
+          <p>Click to choose file or drag and drop</p>
+          <div class="file-name" id="file-name-display"></div>
+        </div>
+        <input type="file" id="file-input" accept=".vtt,.txt,.srt,.docx" onchange="fileSelected(this)"/>
+      </div>
+
+      <div id="input-notes" style="display:none">
+        <p class="hint">No transcript? Summarize what was discussed in your own words.</p>
+        <textarea class="paste-area" id="transcript-notes" placeholder="e.g. Spoke with Sarah (Head of Ops) and James (IT Manager) at Apex Construction. ~150 employees. Currently using spreadsheets for project tracking. Pain point is no visibility across sites. Really liked the idea of dashboards and automated alerts..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runExtract()">Extract client details →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Extract -->
+  <div class="panel" id="panel-1">
+    <div id="extract-status" class="status-bar"></div>
+
+    <div class="card" id="extract-card">
+      <div class="card-title">Client profile — review and correct</div>
+      <div class="extracted-fields">
+        <div class="ex-row"><span class="ex-key">Company name</span><div class="ex-val"><input id="e-company" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Industry</span><div class="ex-val"><input id="e-industry" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Company size</span><div class="ex-val"><input id="e-size" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Key contacts</span><div class="ex-val"><input id="e-contacts" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Region / location</span><div class="ex-val"><input id="e-region" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Current tools</span><div class="ex-val"><input id="e-tools" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Pain points</span><div class="ex-val"><input id="e-pain" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Desired outcomes</span><div class="ex-val"><input id="e-outcomes" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Features resonated</span><div class="ex-val"><input id="e-features" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Timeline / urgency</span><div class="ex-val"><input id="e-timeline" type="text" placeholder="—"/></div></div>
+        <div class="ex-row"><span class="ex-key">Budget signals</span><div class="ex-val"><input id="e-budget" type="text" placeholder="—"/></div></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(0)">← Back</button>
+      <button class="btn btn-primary" onclick="goStep(2)">Choose assets →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Build -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">Client profile type</div>
+      <div class="profile-chips" id="profile-chips">
+        <button class="chip active" onclick="selectProfile(this)">Agency / Creative</button>
+        <button class="chip" onclick="selectProfile(this)">Construction / Field ops</button>
+        <button class="chip" onclick="selectProfile(this)">Enterprise / Corp</button>
+        <button class="chip" onclick="selectProfile(this)">Manufacturing / Ops</button>
+        <button class="chip" onclick="selectProfile(this)">Tech / SaaS</button>
+        <button class="chip" onclick="selectProfile(this)">Nonprofit / Gov</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Assets to build in Smartsheet</div>
+      <div class="asset-grid">
+        <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Demo workspace</div><div class="asset-desc">Branded workspace named for the client</div></div>
+        <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Project tracker</div><div class="asset-desc">Sheet with columns matching their workflow</div></div>
+        <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Status dashboard</div><div class="asset-desc">Summary metrics with rollup formulas</div></div>
+        <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Resource tracker</div><div class="asset-desc">Team capacity and allocation sheet</div></div>
+        <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Risk / issues log</div><div class="asset-desc">Issue tracking with priority and owner</div></div>
+        <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Intake form</div><div class="asset-desc">Smartsheet form linked to tracking sheet</div></div>
+        <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Budget tracker</div><div class="asset-desc">Budget vs actuals with variance formulas</div></div>
+        <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Timeline / Gantt</div><div class="asset-desc">Project timeline with dependencies</div></div>
+      </div>
+    </div>
+
+    <div id="build-status" class="status-bar"></div>
+    <div class="log-box" id="build-log"></div>
+
+    <div id="results-area" style="display:none">
+      <div class="card">
+        <div class="card-title">Built assets — open in Smartsheet</div>
+        <div class="results-grid" id="results-grid"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+      <button class="btn btn-primary" id="build-btn" onclick="runBuild()">Build in Smartsheet →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Config Modal -->
+<div class="config-modal" id="config-modal">
+  <div class="config-inner">
+    <button class="config-close" onclick="closeConfig()">×</button>
+    <div class="config-title">Configuration</div>
+    <div class="config-field">
+      <label>Worker URL</label>
+      <input type="text" id="cfg-worker" placeholder="https://your-worker.workers.dev"/>
+      <div class="config-note">Your Cloudflare Worker endpoint. Set this after deploying the worker.</div>
+    </div>
+    <div class="btn-row" style="margin-top:1.25rem;">
+      <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+      <button class="btn btn-ghost" onclick="closeConfig()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentMethod = 'paste';
+var fileContent = '';
+var extractedData = {};
+
+function getWorkerUrl() {
+  return localStorage.getItem('workerUrl') || '';
+}
+
+function openConfig() {
+  document.getElementById('cfg-worker').value = getWorkerUrl();
+  document.getElementById('config-modal').classList.add('show');
+}
+function closeConfig() { document.getElementById('config-modal').classList.remove('show'); }
+function saveConfig() {
+  localStorage.setItem('workerUrl', document.getElementById('cfg-worker').value.trim());
+  closeConfig();
+  showStatus('build-status', 'info', 'Worker URL saved.');
+}
+
+function goStep(n) {
+  document.querySelectorAll('.panel').forEach(function(p,i){ p.classList.toggle('active', i===n); });
+  document.querySelectorAll('.step-tab').forEach(function(t,i){ t.classList.toggle('active', i===n); });
+}
+
+function setMethod(method, el) {
+  currentMethod = method;
+  document.querySelectorAll('.method-chips .chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('input-paste').style.display = method==='paste' ? 'block' : 'none';
+  document.getElementById('input-file').style.display = method==='file' ? 'block' : 'none';
+  document.getElementById('input-notes').style.display = method==='notes' ? 'block' : 'none';
+}
+
+function selectProfile(el) {
+  document.querySelectorAll('#profile-chips .chip').forEach(function(c){ c.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+function toggleAsset(card) {
+  var on = card.classList.toggle('on');
+  card.querySelector('.asset-badge').textContent = on ? '✓' : '';
+}
+
+function fileSelected(input) {
+  var file = input.files[0];
+  if (!file) return;
+  document.getElementById('file-name-display').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function(e){ fileContent = e.target.result; };
+  reader.readAsText(file);
+}
+function fileDragOver(e) { e.preventDefault(); document.getElementById('file-drop').classList.add('dragover'); }
+function fileDrop(e) {
+  e.preventDefault();
+  document.getElementById('file-drop').classList.remove('dragover');
+  var file = e.dataTransfer.files[0];
+  if (!file) return;
+  document.getElementById('file-name-display').textContent = file.name;
+  var reader = new FileReader();
+  reader.onload = function(ev){ fileContent = ev.target.result; };
+  reader.readAsText(file);
+}
+
+function getTranscriptText() {
+  if (currentMethod === 'paste') return document.getElementById('transcript-paste').value.trim();
+  if (currentMethod === 'file') return fileContent.trim();
+  if (currentMethod === 'notes') return document.getElementById('transcript-notes').value.trim();
+  return '';
+}
+
+function showStatus(id, type, msg, spinner) {
+  var el = document.getElementById(id);
+  el.className = 'status-bar show ' + type;
+  el.innerHTML = (spinner ? '<div class="spinner"></div>' : '') + '<span>' + msg + '</span>';
+}
+function hideStatus(id) { document.getElementById(id).className = 'status-bar'; }
+
+function log(msg, type) {
+  var box = document.getElementById('build-log');
+  box.classList.add('show');
+  var line = document.createElement('div');
+  line.className = 'log-line ' + (type||'');
+  line.textContent = msg;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function runExtract() {
+  var text = getTranscriptText();
+  if (!text) { alert('Please provide transcript content first.'); return; }
+  var workerUrl = getWorkerUrl();
+  if (!workerUrl) { alert('Please configure your Worker URL first (click Configure top right).'); return; }
+
+  goStep(1);
+  showStatus('extract-status', 'info', 'Extracting client details from transcript...', true);
+
+  try {
+    var res = await fetch(workerUrl + '/extract', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: text })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Extraction failed');
+
+    extractedData = data;
+    var fields = ['company','industry','size','contacts','region','tools','pain','outcomes','features','timeline','budget'];
+    fields.forEach(function(f){
+      var el = document.getElementById('e-'+f);
+      if (el && data[f]) el.value = data[f];
+    });
+    hideStatus('extract-status');
+  } catch(err) {
+    showStatus('extract-status', 'error', 'Error: ' + err.message);
+  }
+}
+
+function getExtractedFields() {
+  return {
+    company: document.getElementById('e-company').value,
+    industry: document.getElementById('e-industry').value,
+    size: document.getElementById('e-size').value,
+    contacts: document.getElementById('e-contacts').value,
+    region: document.getElementById('e-region').value,
+    tools: document.getElementById('e-tools').value,
+    pain: document.getElementById('e-pain').value,
+    outcomes: document.getElementById('e-outcomes').value,
+    features: document.getElementById('e-features').value,
+    timeline: document.getElementById('e-timeline').value,
+    budget: document.getElementById('e-budget').value
+  };
+}
+
+async function runBuild() {
+  var workerUrl = getWorkerUrl();
+  if (!workerUrl) { alert('Please configure your Worker URL first.'); return; }
+
+  var fields = getExtractedFields();
+  if (!fields.company) { alert('Please complete the Extract step first.'); return; }
+
+  var assets = [];
+  document.querySelectorAll('.asset-card.on .asset-name').forEach(function(el){ assets.push(el.textContent); });
+  if (!assets.length) { alert('Please select at least one asset to build.'); return; }
+
+  var profile = '';
+  var profileEl = document.querySelector('#profile-chips .chip.active');
+  if (profileEl) profile = profileEl.textContent;
+
+  document.getElementById('build-log').innerHTML = '';
+  document.getElementById('results-area').style.display = 'none';
+  showStatus('build-status', 'info', 'Building Smartsheet assets...', true);
+  document.getElementById('build-btn').disabled = true;
+
+  log('Starting build for ' + fields.company + '...', 'info');
+
+  try {
+    var res = await fetch(workerUrl + '/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: fields, assets: assets, profile: profile })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Build failed');
+
+    (data.log || []).forEach(function(l){ log(l.msg, l.type); });
+
+    if (data.results && data.results.length) {
+      var grid = document.getElementById('results-grid');
+      grid.innerHTML = '';
+      data.results.forEach(function(r){
+        var card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = '<a href="' + r.url + '" target="_blank">' + r.name + '</a><div class="result-type">' + r.type + '</div>';
+        grid.appendChild(card);
+      });
+      document.getElementById('results-area').style.display = 'block';
+    }
+
+    showStatus('build-status', 'success', 'Done! ' + assets.length + ' asset(s) built for ' + fields.company + '.');
+  } catch(err) {
+    showStatus('build-status', 'error', 'Error: ' + err.message);
+    log('Failed: ' + err.message, 'err');
+  }
+
+  document.getElementById('build-btn').disabled = false;
+}
+</script>
+</body>
+</html>
