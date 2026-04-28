@@ -375,18 +375,22 @@
     <div class="card">
       <div class="card-title">Client profile type</div>
       <div class="profile-chips" id="profile-chips">
-        <button class="chip active" onclick="selectProfile(this)">Agency / Creative</button>
-        <button class="chip" onclick="selectProfile(this)">Construction / Field ops</button>
-        <button class="chip" onclick="selectProfile(this)">Enterprise / Corp</button>
-        <button class="chip" onclick="selectProfile(this)">Manufacturing / Ops</button>
-        <button class="chip" onclick="selectProfile(this)">Tech / SaaS</button>
-        <button class="chip" onclick="selectProfile(this)">Nonprofit / Gov</button>
+        <button class="chip active" onclick="selectProfile(this,'Agency / Creative')">Agency / Creative</button>
+        <button class="chip" onclick="selectProfile(this,'Construction / Field ops')">Construction / Field ops</button>
+        <button class="chip" onclick="selectProfile(this,'Enterprise / Corp')">Enterprise / Corp</button>
+        <button class="chip" onclick="selectProfile(this,'Manufacturing / Ops')">Manufacturing / Ops</button>
+        <button class="chip" onclick="selectProfile(this,'Tech / SaaS')">Tech / SaaS</button>
+        <button class="chip" onclick="selectProfile(this,'Nonprofit / Gov')">Nonprofit / Gov</button>
+        <button class="chip" onclick="selectProfile(this,'Healthcare')">Healthcare</button>
+        <button class="chip" onclick="selectProfile(this,'Financial Services')">Financial Services</button>
+        <button class="chip" onclick="selectProfile(this,'Real Estate / Property')">Real Estate / Property</button>
+        <button class="chip" onclick="selectProfile(this,'Retail / eCommerce')">Retail / eCommerce</button>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Assets to build in Smartsheet</div>
-      <div class="asset-grid">
+      <div class="card-title">Core assets</div>
+      <div class="asset-grid" id="core-asset-grid">
         <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Demo workspace</div><div class="asset-desc">Branded workspace named for the client</div></div>
         <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Project tracker</div><div class="asset-desc">Sheet with columns matching their workflow</div></div>
         <div class="asset-card on" onclick="toggleAsset(this)"><div class="asset-badge">✓</div><div class="asset-name">Status dashboard</div><div class="asset-desc">Summary metrics with rollup formulas</div></div>
@@ -396,6 +400,11 @@
         <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Budget tracker</div><div class="asset-desc">Budget vs actuals with variance formulas</div></div>
         <div class="asset-card" onclick="toggleAsset(this)"><div class="asset-badge"></div><div class="asset-name">Timeline / Gantt</div><div class="asset-desc">Project timeline with dependencies</div></div>
       </div>
+    </div>
+
+    <div class="card" id="industry-assets-card">
+      <div class="card-title" id="industry-assets-title">Industry-specific assets</div>
+      <div class="asset-grid" id="industry-asset-grid"></div>
     </div>
 
     <div id="build-status" class="status-bar"></div>
@@ -438,6 +447,9 @@ var currentMethod = 'paste';
 var fileContent = '';
 var extractedData = {};
 
+// Init industry assets on load
+window.addEventListener('load', function(){ renderIndustryAssets('Agency / Creative'); });
+
 function getWorkerUrl() {
   return localStorage.getItem('workerUrl') || '';
 }
@@ -467,9 +479,109 @@ function setMethod(method, el) {
   document.getElementById('input-notes').style.display = method==='notes' ? 'block' : 'none';
 }
 
-function selectProfile(el) {
+var INDUSTRY_ASSETS = {
+  'Agency / Creative': [
+    { name: 'Campaign tracker', desc: 'Track campaigns by client, channel, status and budget' },
+    { name: 'Creative request log', desc: 'Intake and manage creative briefs from clients' },
+    { name: 'Client deliverables tracker', desc: 'Deliverable status by client with due dates and approvals' },
+    { name: 'Retainer hours log', desc: 'Track billable hours against retainer allocations per client' },
+    { name: 'Media plan sheet', desc: 'Channel, placement, spend and performance in one sheet' },
+  ],
+  'Construction / Field ops': [
+    { name: 'Site daily log', desc: 'Daily field reports: crew, weather, work completed, issues' },
+    { name: 'Subcontractor tracker', desc: 'Sub status, scope, contract value and payment milestones' },
+    { name: 'RFI / submittal log', desc: 'Track requests for information and submittal reviews' },
+    { name: 'Punch list', desc: 'Close-out deficiency items with owner, location and status' },
+    { name: 'Safety incident log', desc: 'Record near-misses, incidents and corrective actions' },
+    { name: 'Material procurement log', desc: 'PO tracking, lead times, delivery status by material' },
+  ],
+  'Enterprise / Corp': [
+    { name: 'Executive portfolio view', desc: 'Cross-department project summary for leadership' },
+    { name: 'Change management log', desc: 'Track org changes, owners, communications and status' },
+    { name: 'Meeting actions tracker', desc: 'Capture decisions and actions across recurring meetings' },
+    { name: 'Policy & compliance register', desc: 'Policy ownership, review cycles and audit status' },
+    { name: 'Vendor management sheet', desc: 'Vendor contacts, contracts, renewal dates and ratings' },
+  ],
+  'Manufacturing / Ops': [
+    { name: 'Production schedule', desc: 'Daily/weekly production runs by line, shift and product' },
+    { name: 'Work order tracker', desc: 'WO creation, assignment, progress and completion log' },
+    { name: 'Equipment maintenance log', desc: 'Scheduled and reactive maintenance per asset' },
+    { name: 'Quality / NCR log', desc: 'Non-conformance records with root cause and disposition' },
+    { name: 'Supplier scorecard', desc: 'On-time delivery, quality rating and issue history by supplier' },
+    { name: 'Inventory tracker', desc: 'SKU-level stock levels, reorder points and location' },
+  ],
+  'Tech / SaaS': [
+    { name: 'Sprint tracker', desc: 'Sprint goals, stories, assignees and velocity by team' },
+    { name: 'Product roadmap', desc: 'Feature pipeline by quarter with status and priority' },
+    { name: 'Bug / defect log', desc: 'Issue tracking with severity, assignee and resolution' },
+    { name: 'Release checklist', desc: 'Pre/post-launch task checklist per release' },
+    { name: 'Customer onboarding tracker', desc: 'New customer milestones, health and CSM owner' },
+    { name: 'OKR tracker', desc: 'Objectives and key results with progress and owner' },
+  ],
+  'Nonprofit / Gov': [
+    { name: 'Grant tracker', desc: 'Grant pipeline, deadlines, amounts and reporting requirements' },
+    { name: 'Program outcomes log', desc: 'Beneficiary data, service delivery and outcome metrics' },
+    { name: 'Volunteer management sheet', desc: 'Volunteer roster, availability, hours and assignments' },
+    { name: 'Event planning tracker', desc: 'Tasks, vendors, budget and attendee logistics per event' },
+    { name: 'Stakeholder engagement log', desc: 'Track outreach, meetings and status with key stakeholders' },
+  ],
+  'Healthcare': [
+    { name: 'Patient project tracker', desc: 'Care pathway milestones, team assignments and status' },
+    { name: 'Compliance audit log', desc: 'Audit items, findings, remediation and sign-off' },
+    { name: 'Staff credentialing tracker', desc: 'License expiry, renewal status and document log per staff' },
+    { name: 'Capital equipment request log', desc: 'Equipment requests, approvals, budget and delivery status' },
+    { name: 'Incident / event report log', desc: 'Clinical event reporting with severity and follow-up' },
+  ],
+  'Financial Services': [
+    { name: 'Deal pipeline tracker', desc: 'Deals by stage, value, owner and expected close' },
+    { name: 'Client onboarding checklist', desc: 'KYC, documentation and account setup milestones' },
+    { name: 'Regulatory change log', desc: 'Track regulatory updates, impact assessment and actions' },
+    { name: 'Audit preparation tracker', desc: 'Audit items, evidence owners and submission status' },
+    { name: 'Portfolio review sheet', desc: 'Client portfolio items with review dates and notes' },
+  ],
+  'Real Estate / Property': [
+    { name: 'Property pipeline', desc: 'Acquisition targets by stage, value and key dates' },
+    { name: 'Lease tracker', desc: 'Tenant, space, rent, lease dates and renewal status' },
+    { name: 'Maintenance work order log', desc: 'Maintenance requests by property, trade and status' },
+    { name: 'Inspection log', desc: 'Scheduled inspections, findings and remediation per property' },
+    { name: 'Tenant communication log', desc: 'Track tenant issues, responses and resolution status' },
+  ],
+  'Retail / eCommerce': [
+    { name: 'Product launch tracker', desc: 'New product milestones: sourcing, listing, marketing, go-live' },
+    { name: 'Merchandising calendar', desc: 'Promotions, product features and seasonal planning' },
+    { name: 'Supplier / PO tracker', desc: 'Purchase orders, lead times, delivery and QC status' },
+    { name: 'Store ops checklist', desc: 'Daily/weekly store tasks by location and department' },
+    { name: 'Returns & escalations log', desc: 'Customer returns, reason codes and resolution tracking' },
+  ],
+};
+
+function selectProfile(el, profile) {
   document.querySelectorAll('#profile-chips .chip').forEach(function(c){ c.classList.remove('active'); });
   el.classList.add('active');
+  renderIndustryAssets(profile);
+}
+
+function renderIndustryAssets(profile) {
+  var grid = document.getElementById('industry-asset-grid');
+  var card = document.getElementById('industry-assets-card');
+  var title = document.getElementById('industry-assets-title');
+  var assets = INDUSTRY_ASSETS[profile] || [];
+
+  title.textContent = profile + ' — industry assets';
+
+  if (!assets.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  grid.innerHTML = '';
+  assets.forEach(function(a) {
+    var div = document.createElement('div');
+    div.className = 'asset-card';
+    div.onclick = function(){ toggleAsset(div); };
+    div.innerHTML = '<div class="asset-badge"></div><div class="asset-name">' + a.name + '</div><div class="asset-desc">' + a.desc + '</div>';
+    grid.appendChild(div);
+  });
 }
 
 function toggleAsset(card) {
@@ -575,7 +687,7 @@ async function runBuild() {
   if (!fields.company) { alert('Please complete the Extract step first.'); return; }
 
   var assets = [];
-  document.querySelectorAll('.asset-card.on .asset-name').forEach(function(el){ assets.push(el.textContent); });
+  document.querySelectorAll('#core-asset-grid .asset-card.on .asset-name, #industry-asset-grid .asset-card.on .asset-name').forEach(function(el){ assets.push(el.textContent); });
   if (!assets.length) { alert('Please select at least one asset to build.'); return; }
 
   var profile = '';
