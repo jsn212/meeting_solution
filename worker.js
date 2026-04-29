@@ -15,26 +15,35 @@ const CORS = {
 
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: CORS });
-    }
+    try {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: CORS });
+      }
 
-    const url = new URL(request.url);
+      const url = new URL(request.url);
 
-    if (request.method === 'POST' && url.pathname === '/extract') {
-      return handleExtract(request, env);
-    }
-    if (request.method === 'POST' && url.pathname === '/build') {
-      return handleBuild(request, env);
-    }
+      if (request.method === 'POST' && url.pathname === '/extract') {
+        return await handleExtract(request, env);
+      }
+      if (request.method === 'POST' && url.pathname === '/build') {
+        return await handleBuild(request, env);
+      }
 
-    return json({ error: 'Not found' }, 404);
+      return json({ error: 'Not found' }, 404);
+    } catch (e) {
+      return json({ error: 'Worker crash: ' + e.message }, 500);
+    }
   }
 };
 
 // ─── /extract ────────────────────────────────────────────────
 async function handleExtract(request, env) {
-  const { transcript } = await request.json();
+  if (!env.ANTHROPIC_API_KEY) return json({ error: 'ANTHROPIC_API_KEY not configured in Cloudflare Worker environment variables' }, 500);
+  // TEMP DEBUG — remove after confirming key
+  return json({ debug: true, key_length: env.ANTHROPIC_API_KEY.length, key_prefix: env.ANTHROPIC_API_KEY.substring(0,14), key_suffix: env.ANTHROPIC_API_KEY.slice(-4) }, 200);
+  let body;
+  try { body = await request.json(); } catch(e) { return json({ error: 'Invalid request body' }, 400); }
+  const { transcript } = body;
   if (!transcript) return json({ error: 'No transcript provided' }, 400);
 
   const systemPrompt = `You are a sales intelligence assistant. Extract structured client information from call transcripts or meeting notes. Respond ONLY with a valid JSON object — no markdown, no preamble.
@@ -84,7 +93,10 @@ Required fields (use empty string "" if not found):
 
 // ─── /build ──────────────────────────────────────────────────
 async function handleBuild(request, env) {
-  const { fields, assets, profile } = await request.json();
+  if (!env.SMARTSHEET_TOKEN) return json({ error: 'SMARTSHEET_TOKEN not configured in Cloudflare Worker environment variables' }, 500);
+  let body;
+  try { body = await request.json(); } catch(e) { return json({ error: 'Invalid request body' }, 400); }
+  const { fields, assets, profile } = body;
   const log = [];
   const results = [];
 
